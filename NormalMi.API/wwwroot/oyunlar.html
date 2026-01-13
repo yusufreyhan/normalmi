@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bilgisayar Oyunu - Normal mi?</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="/" class="back-link">← Ana Sayfa</a>
+            <h1>Bilgisayar Oyunu</h1>
+            <p class="subtitle">Gördüğünüz fiyat normal mi?</p>
+        </header>
+
+        <main>
+            <div class="category-page-layout">
+                <div class="category-image-card">
+                    <div class="category-logo">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" class="logo-icon">
+                            <path d="M16 4 L8 12 L16 20 L24 12 Z" 
+                                  fill="none" 
+                                  stroke="currentColor" 
+                                  stroke-width="3" 
+                                  stroke-linecap="round" 
+                                  stroke-linejoin="round"/>
+                            <path d="M16 12 L8 20 L16 28 L24 20 Z" 
+                                  fill="none" 
+                                  stroke="currentColor" 
+                                  stroke-width="3" 
+                                  stroke-linecap="round" 
+                                  stroke-linejoin="round"/>
+                        </svg>
+                        <span>Normal mi?</span>
+                    </div>
+                    <img src="https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=400&h=300&fit=crop" alt="Bilgisayar Oyunu" class="category-image">
+                </div>
+                
+                <div class="price-checker">
+                    <div class="form-group">
+                        <label for="gameSearch">Oyun Ara</label>
+                        <input type="text" id="gameSearch" class="form-control" placeholder="Oyun adı yazın (örn: Cyberpunk, GTA, FIFA)..." autocomplete="off">
+                        <div id="gameDropdown" class="custom-select-dropdown" style="display: none;"></div>
+                    </div>
+
+                    <div class="form-group" id="selectedGameGroup" style="display: none;">
+                        <label>Seçilen Oyun</label>
+                        <div id="selectedGameCard" class="selected-game-card"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="priceInput">Gördüğünüz Fiyat (USD)</label>
+                        <input type="number" id="priceInput" class="form-control" step="0.01" min="0" placeholder="Örn: 29.99">
+                    </div>
+
+                    <button id="checkButton" class="btn-primary" disabled>Normal mi?</button>
+                </div>
+            </div>
+
+            <div id="resultCard" class="result-card" style="display: none;">
+                <div class="result-emoji-container" id="resultEmojiContainer">
+                    <span class="result-emoji" id="resultEmoji"></span>
+                </div>
+                <div class="result-header">
+                    <div>
+                        <h2 id="resultTitle"></h2>
+                        <p class="result-message" id="resultMessage"></p>
+                    </div>
+                    <span id="resultBadge" class="result-badge"></span>
+                </div>
+                
+                <div class="price-bar-container" id="priceBarContainer" style="display: none;">
+                    <div class="price-bar">
+                        <div class="price-bar-track">
+                            <div class="price-bar-fill" id="priceBarFill"></div>
+                            <div class="price-bar-marker" id="priceBarMarker"></div>
+                        </div>
+                        <div class="price-bar-labels">
+                            <span class="price-bar-label">En Düşük</span>
+                            <span class="price-bar-label">Ortalama</span>
+                            <span class="price-bar-label">En Yüksek</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="result-content">
+                    <div class="result-item">
+                        <span class="label">Sizin Fiyatınız:</span>
+                        <span class="value" id="userPrice"></span>
+                    </div>
+                    <div class="result-item">
+                        <span class="label">Piyasa Ortalaması:</span>
+                        <span class="value" id="averagePrice"></span>
+                    </div>
+                    <div class="result-item">
+                        <span class="label">En Düşük Fiyat:</span>
+                        <span class="value" id="lowestPrice"></span>
+                    </div>
+                    <div class="result-item">
+                        <span class="label">Fark:</span>
+                        <span class="value" id="difference"></span>
+                    </div>
+                    <div class="result-item">
+                        <span class="label">Fark Yüzdesi:</span>
+                        <span class="value" id="differencePercentage"></span>
+                    </div>
+                </div>
+                
+                <div id="cheapestDealCard" class="cheapest-deal-card" style="display: none;">
+                    <h3>🎮 En Ucuz Burada</h3>
+                    <div class="deal-info">
+                        <div class="deal-store">
+                            <strong id="dealStoreName"></strong>
+                        </div>
+                        <div class="deal-price">
+                            <span class="price-label">Fiyat:</span>
+                            <span class="price-value" id="dealPrice"></span>
+                        </div>
+                        <a id="dealBuyLink" href="#" target="_blank" class="btn-deal">Siteye Git →</a>
+                    </div>
+                </div>
+                
+                <div class="result-actions">
+                    <button id="newSearchButton" class="btn-secondary btn-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                        </svg>
+                        Yeni Oyun Sorgula
+                    </button>
+                </div>
+                
+                <div class="data-source-info">
+                    <span>Veri kaynağı: <a href="https://www.cheapshark.com" target="_blank">cheapshark.com</a></span>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/oyunlar.js"></script>
+</body>
+</html>
+

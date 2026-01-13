@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meyve & Sebze - Normal mi?</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="/" class="back-link">← Ana Sayfa</a>
+            <h1>Meyve & Sebze</h1>
+            <p class="subtitle">Gördüğünüz fiyat normal mi?</p>
+        </header>
+
+        <main>
+            <div class="price-checker">
+                <div class="form-group">
+                    <label for="productSelect">Ürün Seçin</label>
+                    <select id="productSelect" class="form-control">
+                        <option value="">Yükleniyor...</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="productTypeGroup" style="display: none;">
+                    <label for="productTypeSelect">Ürün Türü</label>
+                    <select id="productTypeSelect" class="form-control">
+                        <option value="">Tür seçin...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="priceInput">Gördüğünüz Fiyat (TL)</label>
+                    <input type="number" id="priceInput" class="form-control" step="0.01" min="0" placeholder="Örn: 25.50">
+                </div>
+
+                <button id="checkButton" class="btn-primary" disabled>Normal mi?</button>
+            </div>
+
+            <div id="resultCard" class="result-card" style="display: none;">
+                <div class="result-header">
+                    <h2 id="resultTitle"></h2>
+                    <span id="resultBadge" class="result-badge"></span>
+                </div>
+                <div class="result-content">
+                    <div class="result-item">
+                        <span class="label">Sizin Fiyatınız:</span>
+                        <span class="value" id="userPrice"></span>
+                    </div>
+                    <div class="result-item">
+                        <span class="label">Piyasa Ortalaması:</span>
+                        <span class="value" id="marketPrice"></span>
+                    </div>
+                    <div class="result-item">
+                        <span class="label">Fark:</span>
+                        <span class="value" id="difference"></span>
+                    </div>
+                    <div class="result-item">
+                        <span class="label">Fark Yüzdesi:</span>
+                        <span class="value" id="differencePercentage"></span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/meyve-sebze.js"></script>
+</body>
+</html>
+
