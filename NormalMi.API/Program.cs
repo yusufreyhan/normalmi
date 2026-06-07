@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using NormalMi.API.Services;
 using OfficeOpenXml;
 
@@ -6,6 +7,11 @@ using OfficeOpenXml;
 ExcelPackage.License.SetNonCommercialPersonal("NormalMi");
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+});
 
 // Add services to the container.
 builder.Services.AddControllers()
@@ -39,6 +45,8 @@ builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddHostedService<HalBackgroundService>();
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
