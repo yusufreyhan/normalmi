@@ -57,7 +57,7 @@ function displayCategories(categories) {
         return;
     }
 
-    const categoriesHTML = categories.map(category => {
+    categoriesGrid.innerHTML = categories.map(category => {
         // Route'u düzelt - eğer .html yoksa ekle
         let route = category.route;
         if (!route.endsWith('.html') && !route.startsWith('http')) {
@@ -73,17 +73,4 @@ function displayCategories(categories) {
         </a>
     `;
     }).join('');
-    
-    // "Daha fazla kategori gelecek" kartını ekle
-    const comingSoonCard = `
-        <div class="category-card coming-soon-card">
-            <div class="coming-soon-icon">➕</div>
-            <div class="category-card-content">
-                <h2>Daha Fazla Kategori</h2>
-                <p>Yakında daha fazla kategori eklenecek!</p>
-            </div>
-        </div>
-    `;
-    
-    categoriesGrid.innerHTML = categoriesHTML + comingSoonCard;
 }

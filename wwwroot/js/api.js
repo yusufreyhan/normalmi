@@ -1,7 +1,4 @@
-// Backend URL'i - Development için
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'https://localhost:7160/api'  // HTTPS port
-    : '/api'; // Production'da relative path kullan
+const API_BASE_URL = '/api';
 
 class ApiClient {
     async get(url) {

@@ -12,6 +12,38 @@ public class HalService : IHalService
     private readonly HttpClient _httpClient;
     private readonly ProduceCacheService? _cacheService;
     private const string HalUrl = "https://www.hal.gov.tr/Sayfalar/FiyatDetaylari.aspx";
+
+    private static string NormalizeTurkish(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return string.Empty;
+
+        return text
+            .Replace('İ', 'i').Replace('I', 'i').Replace('ı', 'i')
+            .Replace('Ü', 'u').Replace('ü', 'u')
+            .Replace('Ö', 'o').Replace('ö', 'o')
+            .Replace('Ş', 's').Replace('ş', 's')
+            .Replace('Ç', 'c').Replace('ç', 'c')
+            .Replace('Ğ', 'g').Replace('ğ', 'g')
+            .ToLowerInvariant();
+    }
+
+    private static bool ContainsTurkish(string text, string value)
+    {
+        if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(value))
+            return false;
+
+        return NormalizeTurkish(text).Contains(NormalizeTurkish(value), StringComparison.Ordinal);
+    }
+
+    private static void UpdateCache(ProduceCacheService? cacheService, List<Produce> produces)
+    {
+        if (cacheService == null)
+            return;
+
+        cacheService.UpdateCache(produces);
+        Console.WriteLine($"Cache güncellendi: {cacheService.GetCachedProduces().Count} ürün, Tarih: {cacheService.GetLastUpdateTime():yyyy-MM-dd HH:mm:ss}");
+    }
     private string? _viewState;
     private string? _viewStateGenerator;
     private string? _eventValidation;
@@ -73,32 +105,24 @@ public class HalService : IHalService
         {
             Console.WriteLine("[RefreshProduceListAsync] Excel'den veri çekiliyor...");
             
-            // Sadece Excel'den veri çek (HTML parsing kaldırıldı)
             var excelProduces = await GetProduceListFromExcelAsync();
             if (excelProduces != null && excelProduces.Any())
             {
                 Console.WriteLine($"[RefreshProduceListAsync] Excel'den {excelProduces.Count} ürün çekildi");
-                
-                // Cache'i güncelle
-                if (_cacheService != null)
-                {
-                    _cacheService.UpdateCache(excelProduces);
-                    
-                    // Cache'in güncellendiğini doğrula
-                    var cachedCount = _cacheService.GetCachedProduces().Count;
-                    var lastUpdate = _cacheService.GetLastUpdateTime();
-                    Console.WriteLine($"[RefreshProduceListAsync] Cache güncellendi: {cachedCount} ürün, Tarih: {lastUpdate:yyyy-MM-dd HH:mm:ss}");
-                }
-                else
-                {
-                    Console.WriteLine("[RefreshProduceListAsync] ⚠ Cache servisi null!");
-                }
-                
+                UpdateCache(_cacheService, excelProduces);
                 return excelProduces;
             }
 
-            // Excel başarısız olursa hata logla ve boş liste döndür
-            Console.WriteLine("⚠ Excel indirme başarısız! Veri çekilemedi.");
+            Console.WriteLine("⚠ Excel indirme başarısız, HTML sayfasından veri çekiliyor...");
+            var htmlProduces = await GetProduceListFromHtmlAsync();
+            if (htmlProduces.Any())
+            {
+                Console.WriteLine($"[RefreshProduceListAsync] HTML'den {htmlProduces.Count} ürün çekildi");
+                UpdateCache(_cacheService, htmlProduces);
+                return htmlProduces;
+            }
+
+            Console.WriteLine("⚠ HAL verisi çekilemedi.");
             return new List<Produce>();
         }
         catch (Exception ex)
@@ -318,16 +342,12 @@ public class HalService : IHalService
                         var cells = rows[rowIdx].SelectNodes(".//td | .//th");
                         if (cells == null || cells.Count < 4) continue;
 
-                        var cellTexts = cells.Select(c => c.InnerText?.Trim() ?? "").ToList();
-                        var cellTextsLower = cellTexts.Select(t => t.ToLowerInvariant()).ToList();
+                        var cellTexts = cells.Select(c => System.Net.WebUtility.HtmlDecode(c.InnerText?.Trim() ?? "")).ToList();
                         
-                        // Başlık satırını tespit et: "Ürün Adı", "Ürün Cinsi", "Minimum Fiyat", "Maksimum Fiyat" içermeli
-                        bool hasProductName = cellTextsLower.Any(t => t.Contains("ürün adı") || t.Contains("ürün"));
-                        bool hasProductType = cellTextsLower.Any(t => t.Contains("ürün cinsi") || t.Contains("cins"));
-                        bool hasMinPrice = cellTextsLower.Any(t => t.Contains("minimum fiyat") || t.Contains("minumum fiyat") || t.Contains("min"));
-                        bool hasMaxPrice = cellTextsLower.Any(t => t.Contains("maksimum fiyat") || t.Contains("maks") || t.Contains("max"));
+                        bool hasProductName = cellTexts.Any(t => ContainsTurkish(t, "ürün adı"));
+                        bool hasProductType = cellTexts.Any(t => ContainsTurkish(t, "ürün cinsi") || ContainsTurkish(t, "cins"));
 
-                        if (hasProductName && hasProductType && (hasMinPrice || hasMaxPrice))
+                        if (hasProductName && hasProductType)
                         {
                             Console.WriteLine($"Doğru tablo bulundu! Başlık satırı: {rowIdx + 1}. satır");
                             Console.WriteLine($"Başlık sütunları: {string.Join(" | ", cellTexts)}");
@@ -376,22 +396,21 @@ public class HalService : IHalService
                 
                 for (int colIdx = 0; colIdx < headerCells.Count; colIdx++)
                 {
-                    var headerText = headerCells[colIdx].InnerText?.Trim() ?? "";
-                    var headerTextLower = headerText.ToLowerInvariant();
+                    var headerText = System.Net.WebUtility.HtmlDecode(headerCells[colIdx].InnerText?.Trim() ?? "");
                     
-                    if ((headerTextLower.Contains("ürün adı") || (headerTextLower.Contains("ürün") && !headerTextLower.Contains("cins") && !headerTextLower.Contains("türü"))) && colProductName == -1)
+                    if (ContainsTurkish(headerText, "ürün adı") && colProductName == -1)
                         colProductName = colIdx;
-                    else if ((headerTextLower.Contains("ürün cinsi") || headerTextLower.Contains("cins")) && colProductType == -1)
+                    else if ((ContainsTurkish(headerText, "ürün cinsi") || ContainsTurkish(headerText, "cins")) && colProductType == -1)
                         colProductType = colIdx;
-                    else if ((headerTextLower.Contains("minimum fiyat") || headerTextLower.Contains("minumum fiyat") || (headerTextLower.Contains("min") && headerTextLower.Contains("fiyat"))) && colMinPrice == -1)
+                    else if ((ContainsTurkish(headerText, "minimum fiyat") || ContainsTurkish(headerText, "minumum fiyat") || ContainsTurkish(headerText, "ortalama fiyat")) && colMinPrice == -1)
                         colMinPrice = colIdx;
-                    else if ((headerTextLower.Contains("maksimum fiyat") || (headerTextLower.Contains("maks") && headerTextLower.Contains("fiyat"))) && colMaxPrice == -1)
+                    else if ((ContainsTurkish(headerText, "maksimum fiyat") || ContainsTurkish(headerText, "işlem hacmi")) && colMaxPrice == -1)
                         colMaxPrice = colIdx;
-                    else if ((headerTextLower.Contains("ortalama fiyat") || (headerTextLower.Contains("ortalama") && headerTextLower.Contains("fiyat"))) && colAveragePrice == -1)
+                    else if (ContainsTurkish(headerText, "ortalama fiyat") && colAveragePrice == -1)
                         colAveragePrice = colIdx;
-                    else if ((headerTextLower.Contains("işlem hacmi") || headerTextLower.Contains("hacim")) && colVolume == -1)
+                    else if ((ContainsTurkish(headerText, "işlem hacmi") || ContainsTurkish(headerText, "hacim")) && colVolume == -1)
                         colVolume = colIdx;
-                    else if (headerTextLower.Contains("birim") && colUnit == -1)
+                    else if (ContainsTurkish(headerText, "birim") && colUnit == -1)
                         colUnit = colIdx;
                 }
 

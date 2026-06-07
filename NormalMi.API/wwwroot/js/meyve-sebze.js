@@ -15,73 +15,49 @@ document.addEventListener('DOMContentLoaded', async () => {
     const priceInput = document.getElementById('priceInput');
     const checkButton = document.getElementById('checkButton');
 
-    // Ürün listesini yükle
-    try {
-        console.log('Ürün listesi yükleniyor...');
+    async function loadProducts() {
         const result = await api.getProduceList();
-        
-        console.log('API Response:', result);
-        
-        // Veriler hazırlanıyorsa loading durumunu göster
+
         if (result && result.loading === true) {
-            console.log('Veriler hazırlanıyor...');
-            productSelect.placeholder = 'Veriler hazırlanıyor, lütfen bekleyin...';
-            productSelect.disabled = true;
-            checkButton.disabled = true;
-            
-            // 5 saniye sonra tekrar dene
-            setTimeout(async () => {
-                try {
-                    const retryResult = await api.getProduceList();
-                    console.log('Retry result:', retryResult);
-                    if (!retryResult.loading && Array.isArray(retryResult)) {
-                        products = retryResult;
-                        initializeProducts();
-                    } else if (retryResult.loading) {
-                        // Hala loading, 10 saniye sonra tekrar dene
-                        setTimeout(async () => {
-                            const finalResult = await api.getProduceList();
-                            console.log('Final result:', finalResult);
-                            if (!finalResult.loading && Array.isArray(finalResult)) {
-                                products = finalResult;
-                                initializeProducts();
-                            } else {
-                                productSelect.placeholder = 'Veriler yüklenemedi, sayfayı yenileyin';
-                                productSelect.disabled = false;
-                            }
-                        }, 10000);
-                    } else {
-                        productSelect.placeholder = 'Veriler yüklenemedi, sayfayı yenileyin';
-                        productSelect.disabled = false;
-                    }
-                } catch (error) {
-                    console.error('Retry error:', error);
-                    productSelect.placeholder = 'Veriler yüklenemedi, sayfayı yenileyin';
-                    productSelect.disabled = false;
-                }
-            }, 5000);
+            return null;
+        }
+
+        if (Array.isArray(result) && result.length > 0) {
+            return result;
+        }
+
+        return null;
+    }
+
+    try {
+        productSelect.placeholder = 'Ürünler yükleniyor...';
+        productSelect.disabled = true;
+        checkButton.disabled = true;
+
+        products = await loadProducts();
+
+        if (!products) {
+            productSelect.placeholder = 'HAL verileri çekiliyor...';
+            await api.refreshProduceList();
+            products = await loadProducts();
+        }
+
+        if (!products) {
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            products = await loadProducts();
+        }
+
+        if (!products || products.length === 0) {
+            productSelect.placeholder = 'Veriler yüklenemedi, sayfayı yenileyin';
+            productSelect.disabled = false;
             return;
         }
-        
-        // Normal array response (cache dolu)
-        if (Array.isArray(result)) {
-            products = result;
-            console.log(`Toplam ${products.length} ürün yüklendi`);
-            
-            if (!products || products.length === 0) {
-                console.warn('Ürün listesi boş!');
-                productSelect.placeholder = 'Ürün bulunamadı';
-                return;
-            }
-            
-            initializeProducts();
-        } else {
-            console.error('Beklenmeyen response formatı:', result);
-            productSelect.placeholder = 'Veriler yüklenemedi';
-        }
+
+        initializeProducts();
     } catch (error) {
         console.error('Ürün listesi yüklenirken hata:', error);
         productSelect.placeholder = 'Veriler yüklenemedi';
+        productSelect.disabled = false;
     }
     
     function initializeProducts() {

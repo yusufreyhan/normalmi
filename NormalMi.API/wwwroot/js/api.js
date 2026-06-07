@@ -1,7 +1,18 @@
-// Backend URL'i - Development için
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'https://localhost:7160/api'  // HTTPS port
-    : '/api'; // Production'da relative path kullan
+function getApiBaseUrl() {
+    const { hostname, port } = window.location;
+
+    if (port === '5036' || port === '7160') {
+        return '/api';
+    }
+
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '') {
+        return 'http://localhost:5036/api';
+    }
+
+    return '/api';
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 class ApiClient {
     async get(url) {
@@ -34,6 +45,14 @@ class ApiClient {
 
     async getProduceList() {
         return this.get('/produce/list');
+    }
+
+    async refreshProduceList() {
+        const response = await fetch(`${API_BASE_URL}/produce/refresh`, { method: 'POST' });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
     }
 
     async getProducePrice(product, type = null) {

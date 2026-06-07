@@ -22,14 +22,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         searchTimeout = setTimeout(async () => {
+            gameDropdown.innerHTML = '<div class="game-dropdown-item">Aranıyor...</div>';
+            gameDropdown.style.display = 'block';
+
             try {
                 const games = await api.searchGames(query);
-                displayGameSearchResults(games);
+                displayGameSearchResults(games, query);
             } catch (error) {
                 console.error('Oyun arama hatası:', error);
-                gameDropdown.style.display = 'none';
+                gameDropdown.innerHTML = '<div class="game-dropdown-item">Arama başarısız. Sayfayı yenileyin.</div>';
+                gameDropdown.style.display = 'block';
             }
-        }, 500); // 500ms debounce
+        }, 400);
     });
 
     // Oyun seçildiğinde
@@ -90,9 +94,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    function displayGameSearchResults(games) {
+    function displayGameSearchResults(games, query = '') {
         if (!games || games.length === 0) {
-            gameDropdown.style.display = 'none';
+            gameDropdown.innerHTML = `<div class="game-dropdown-item">"${query}" için sonuç bulunamadı</div>`;
+            gameDropdown.style.display = 'block';
             return;
         }
 
